@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://YOUR-SITE/sitemap.xml
+Sitemap: https://utubestats.github.io/Exam-Tools/index.html
