@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resize Image to Exact Pixels Online Free — Width × Height</title>
+<meta name="description" content="Resize any photo to exact pixel dimensions (413x531, 200x230, 600x600) for Pakistani exam and university forms. Free, browser-based, nothing uploaded.">
+<link rel="canonical" href="https://YOUR-SITE/resize-pixels.html">
+<style>
+  body{font-family:system-ui,sans-serif;max-width:760px;margin:0 auto;padding:20px;line-height:1.65;color:#1a1a1a}
+  nav a{margin-right:14px;color:#0055aa;text-decoration:none;font-size:.95rem}
+  .drop{border:2px dashed #bbb;border-radius:10px;padding:30px;text-align:center;color:#555;margin:18px 0;background:#fafafa;cursor:pointer}
+  input[type=file]{display:none}
+  .btn{display:inline-block;background:#0055aa;color:#fff;padding:10px 18px;border-radius:6px;border:none;font-size:1rem;cursor:pointer;margin-top:10px}
+  .btn:disabled{background:#999;cursor:not-allowed}
+  label{display:inline-block;margin-right:14px;font-weight:600}
+  input[type=number]{padding:8px;font-size:1rem;width:100px;margin-top:6px;border:1px solid #ccc;border-radius:6px}
+  #result{margin-top:18px;padding:14px;background:#eef7ee;border:1px solid #c8e0c8;border-radius:8px;display:none}
+  #result a{color:#0055aa;font-weight:600}
+  #status{color:#555;font-size:.9rem;margin-top:8px}
+  .opts{margin-top:14px}
+</style>
+</head>
+<body>
+<nav><a href="index.html">← Home</a> <a href="resize-kb.html">Resize to KB</a></nav>
+
+<h1>Resize Image to Exact Pixels</h1>
+<p>Enter the width and height your form asks for. If you leave "Keep aspect ratio" on, the image is fitted without stretching. Your photo stays on your device.</p>
+
+<div class="opts">
+  <label>Width (px) <input type="number" id="w" value="413" min="1"></label>
+  <label>Height (px) <input type="number" id="h" value="531" min="1"></label>
+  <label style="font-weight:400"><input type="checkbox" id="keep" checked> Keep aspect ratio</label>
+</div>
+
+<div class="drop" id="drop">
+  <p><strong>Select a photo</strong> or drag and drop it here</p>
+  <input type="file" id="file" accept="image/*">
+  <button class="btn" id="pick" type="button">Choose Photo</button>
+</div>
+
+<button class="btn" id="run" disabled>Resize Image</button>
+<div id="status"></div>
+<div id="result"></div>
+
+<h2>Common pixel sizes used in Pakistan</h2>
+<ul>
+  <li><strong>413 × 531</strong> — passport photo (35×45 mm at 300 DPI)</li>
+  <li><strong>200 × 230</strong> — many university admission portals</li>
+  <li><strong>600 × 600</strong> — profile photos and some job portals</li>
+  <li><strong>300 × 300</strong> — small avatar / signature crops</li>
+</ul>
+<p>Always confirm the exact numbers in your official form notice. These are common examples, not guarantees.</p>
+
+<script>
+const fileInput=document.getElementById('file');
+const pick=document.getElementById('pick');
+const run=document.getElementById('run');
+const drop=document.getElementById('drop');
+const status=document.getElementById('status');
+const result=document.getElementById('result');
+let selected=null;
+
+pick.onclick=e=>{e.stopPropagation();fileInput.click();};
+drop.onclick=e=>{if(e.target===drop||e.target.tagName==='P')fileInput.click();};
+fileInput.onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.background='#eef7ee';});
+drop.addEventListener('dragleave',()=>{drop.style.background='#fafafa';});
+drop.addEventListener('drop',e=>{e.preventDefault();drop.style.background='#fafafa';if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);});
+
+function load(f){
+  selected=f;
+  status.textContent='Selected: '+f.name;
+  run.disabled=false;
+  result.style.display='none';
+}
+
+run.onclick=async()=>{
+  if(!selected)return;
+  let w=parseInt(document.getElementById('w').value);
+  let h=parseInt(document.getElementById('h').value);
+  if(!w||!h||w<1||h<1){status.textContent='Enter valid width and height.';return;}
+  const keep=document.getElementById('keep').checked;
+  run.disabled=true;
+  status.textContent='Processing…';
+  result.style.display='none';
+
+  try{
+    const img=await loadImage(selected);
+    let tw=w, th=h, sx=0, sy=0, sw=img.width, sh=img.height;
+
+    if(keep){
+      const srcRatio=img.width/img.height;
+      const dstRatio=w/h;
+      if(srcRatio>dstRatio){
+        sw=img.height*dstRatio; sx=(img.width-sw)/2;
+      }else{
+        sh=img.width/dstRatio; sy=(img.height-sh)/2;
+      }
+    }
+
+    const canvas=document.createElement('canvas');
+    canvas.width=tw; canvas.height=th;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,tw,th);
+    ctx.drawImage(img,sx,sy,sw,sh,0,0,tw,th);
+
+    const blob=await toBlob(canvas,'image/jpeg',0.92);
+    const url=URL.createObjectURL(blob);
+    const kb=Math.round(blob.size/1024);
+    result.style.display='block';
+    result.innerHTML='<strong>Done.</strong> '+tw+' × '+th+' px ('+kb+' KB).<br><a href="'+url+'" download="resized-'+tw+'x'+th+'.jpg">Download image</a>';
+    status.textContent='';
+  }catch(err){
+    status.textContent='Error: '+err.message;
+  }
+  run.disabled=false;
+};
+
+function loadImage(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=r.result;};
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function toBlob(canvas,type,q){return new Promise(res=>canvas.toBlob(res,type,q));}
+</script>
+</body>
+</html>

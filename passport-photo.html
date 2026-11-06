@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passport Photo Maker Online Free — 35x45 mm / 413x531 px</title>
+<meta name="description" content="Crop a photo to standard Pakistani passport size (35x45 mm, 413x531 px) for FPSC, PPSC and university forms. Free, browser-based, private.">
+<link rel="canonical" href="https://YOUR-SITE/passport-photo.html">
+<style>
+  body{font-family:system-ui,sans-serif;max-width:760px;margin:0 auto;padding:20px;line-height:1.65;color:#1a1a1a}
+  nav a{margin-right:14px;color:#0055aa;text-decoration:none;font-size:.95rem}
+  .drop{border:2px dashed #bbb;border-radius:10px;padding:30px;text-align:center;color:#555;margin:18px 0;background:#fafafa;cursor:pointer}
+  input[type=file]{display:none}
+  .btn{display:inline-block;background:#0055aa;color:#fff;padding:10px 18px;border-radius:6px;border:none;font-size:1rem;cursor:pointer;margin-top:10px}
+  .btn:disabled{background:#999;cursor:not-allowed}
+  #result{margin-top:18px;padding:14px;background:#eef7ee;border:1px solid #c8e0c8;border-radius:8px;display:none}
+  #result a{color:#0055aa;font-weight:600}
+  #status{color:#555;font-size:.9rem;margin-top:8px}
+</style>
+</head>
+<body>
+<nav><a href="index.html">← Home</a> <a href="resize-kb.html">Resize to KB</a></nav>
+
+<h1>Passport Photo Maker (35×45 mm / 413×531 px)</h1>
+<p>This crops your photo to the standard Pakistani passport size used by FPSC, PPSC, and most university forms. The image is centred and fitted — no stretching. Everything runs on your device.</p>
+
+<div class="drop" id="drop">
+  <p><strong>Select a front-facing photo</strong> or drag it here</p>
+  <p style="font-size:.85rem;color:#888">Plain background recommended</p>
+  <input type="file" id="file" accept="image/*">
+  <button class="btn" id="pick" type="button">Choose Photo</button>
+</div>
+
+<button class="btn" id="run" disabled>Make Passport Photo</button>
+<div id="status"></div>
+<div id="result"></div>
+
+<h2>What makes a valid passport photo</h2>
+<ul>
+  <li>Front-facing, eyes open, neutral expression</li>
+  <li>Plain light background (white or off-white)</li>
+  <li>Recent — usually within 6 months</li>
+  <li>No cap or heavy shadow on the face</li>
+  <li>Head and top of shoulders visible</li>
+</ul>
+
+<h2>Size details</h2>
+<p>35 × 45 mm at 300 DPI equals <strong>413 × 531 pixels</strong>. This is the standard used across most Pakistani government and university portals. If your form asks for a different KB limit, run the result through the <a href="resize-kb.html">Resize to KB tool</a> afterwards.</p>
+
+<script>
+const fileInput=document.getElementById('file');
+const pick=document.getElementById('pick');
+const run=document.getElementById('run');
+const drop=document.getElementById('drop');
+const status=document.getElementById('status');
+const result=document.getElementById('result');
+let selected=null;
+
+pick.onclick=e=>{e.stopPropagation();fileInput.click();};
+drop.onclick=e=>{if(e.target===drop||e.target.tagName==='P')fileInput.click();};
+fileInput.onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.background='#eef7ee';});
+drop.addEventListener('dragleave',()=>{drop.style.background='#fafafa';});
+drop.addEventListener('drop',e=>{e.preventDefault();drop.style.background='#fafafa';if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);});
+
+function load(f){
+  selected=f;
+  status.textContent='Selected: '+f.name;
+  run.disabled=false;
+  result.style.display='none';
+}
+
+run.onclick=async()=>{
+  if(!selected)return;
+  run.disabled=true;
+  status.textContent='Cropping…';
+  result.style.display='none';
+
+  try{
+    const img=await loadImage(selected);
+    const tw=413, th=531;
+    const srcRatio=img.width/img.height;
+    const dstRatio=tw/th;
+    let sw,sh,sx,sy;
+    if(srcRatio>dstRatio){sh=img.height;sw=sh*dstRatio;sx=(img.width-sw)/2;sy=0;}
+    else{sw=img.width;sh=sw/dstRatio;sx=0;sy=(img.height-sh)/2;}
+
+    const canvas=document.createElement('canvas');
+    canvas.width=tw; canvas.height=th;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,tw,th);
+    ctx.drawImage(img,sx,sy,sw,sh,0,0,tw,th);
+
+    const blob=await toBlob(canvas,'image/jpeg',0.92);
+    const url=URL.createObjectURL(blob);
+    const kb=Math.round(blob.size/1024);
+    result.style.display='block';
+    result.innerHTML='<strong>Done.</strong> 413 × 531 px ('+kb+' KB).<br><a href="'+url+'" download="passport-photo.jpg">Download passport photo</a><br><small>If your form has a KB limit, run this file through the Resize to KB tool.</small>';
+    status.textContent='';
+  }catch(err){
+    status.textContent='Error: '+err.message;
+  }
+  run.disabled=false;
+};
+
+function loadImage(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=r.result;};
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function toBlob(canvas,type,q){return new Promise(res=>canvas.toBlob(res,type,q));}
+</script>
+</body>
+</html>
